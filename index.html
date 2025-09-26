@@ -1,0 +1,223 @@
+<!-- HRA Calculator (Old Tax Regime) - Cleaned (no bracketed sources) -->
+<section id="hra-calculator" lang="en" aria-labelledby="hraCalcHeading">
+  <style>
+    #hra-calculator { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; max-width: 860px; margin: 1.5rem auto; padding: 1.25rem; border: 1px solid #e5e7eb; border-radius: 12px; background: #ffffff; }
+    #hra-calculator h2 { margin: 0 0 0.75rem; font-size: 1.5rem; }
+    #hra-calculator p.helper { color: #4b5563; margin: 0 0 1rem; font-size: 0.95rem; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+    .field { display: flex; flex-direction: column; }
+    .field label { font-weight: 600; margin-bottom: 0.25rem; }
+    .field small { color: #6b7280; }
+    .field input[type="number"], .field select { padding: 0.6rem 0.7rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.95rem; }
+    .field input[type="checkbox"] { transform: scale(1.1); margin-right: 0.5rem; }
+    .row { display: flex; align-items: center; gap: 0.5rem; }
+    .actions { display: flex; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap; }
+    button { background: #2563eb; color: #fff; border: none; border-radius: 8px; padding: 0.7rem 1rem; cursor: pointer; font-size: 0.95rem; }
+    button.secondary { background: #6b7280; }
+    button:disabled { background: #9ca3af; cursor: not-allowed; }
+    .results { margin-top: 1.25rem; padding: 1rem; border: 1px dashed #cbd5e1; border-radius: 10px; background: #f8fafc; }
+    .results h3 { margin: 0 0 0.75rem; font-size: 1.2rem; }
+    .kv { display: grid; grid-template-columns: 1fr auto; gap: 0.4rem 1rem; align-items: baseline; }
+    .kv div { padding: 0.25rem 0; }
+    .emph { font-weight: 700; }
+    .note { color: #374151; font-size: 0.92rem; margin-top: 0.75rem; }
+    .warn { color: #b45309; background: #fffbeb; border: 1px solid #f59e0b33; padding: 0.6rem; border-radius: 8px; margin-top: 0.75rem; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    .foot { margin-top: 0.75rem; color: #6b7280; font-size: 0.85rem; }
+    .muted { color: #6b7280; }
+    .pill { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 999px; background: #eef2ff; color: #4338ca; font-size: 0.8rem; margin-left: 0.4rem; }
+  </style>
+
+  <h2 id="hraCalcHeading">HRA Calculator</h2>
+  <p class="helper">Compute HRA exemption under Section 10(13A) for the old tax regime using the statutory “least of three” method with metro/non-metro caps and the 10% salary rent differential.</p>
+
+  <form id="hraForm" novalidate>
+    <div class="grid" role="group" aria-labelledby="incomeGroup">
+      <h3 id="incomeGroup" class="sr-only">Income details</h3>
+
+      <div class="field">
+        <label for="basic">Monthly Basic Salary (₹)</label>
+        <input id="basic" name="basic" type="number" inputmode="decimal" min="0" step="1" placeholder="e.g., 50000" required aria-describedby="basicHelp">
+        <small id="basicHelp">Basic per month; do not annualize — the calculator computes yearly values.</small>
+      </div>
+
+      <div class="field">
+        <label for="da">Monthly Dearness Allowance - DA (₹)</label>
+        <input id="da" name="da" type="number" inputmode="decimal" min="0" step="1" placeholder="e.g., 0 or 5000" aria-describedby="daHelp">
+        <small id="daHelp">Include only DA forming part of retirement benefits if applicable; salary = Basic + DA (as applicable).</small>
+      </div>
+
+      <div class="field">
+        <label for="hra">Monthly HRA Received (₹)</label>
+        <input id="hra" name="hra" type="number" inputmode="decimal" min="0" step="1" placeholder="e.g., 12000" required aria-describedby="hraHelp">
+        <small id="hraHelp">HRA as paid by employer; exemption applies only under the old tax regime.</small>
+      </div>
+
+      <div class="field">
+        <label for="rent">Monthly Rent Paid (₹)</label>
+        <input id="rent" name="rent" type="number" inputmode="decimal" min="0" step="1" placeholder="e.g., 15000" required aria-describedby="rentHelp">
+        <small id="rentHelp">Actual rent paid for the accommodation occupied.</small>
+      </div>
+
+      <div class="field">
+        <label for="city">City Category</label>
+        <select id="city" name="city" aria-describedby="cityHelp">
+          <option value="metro">Metro (Delhi, Mumbai, Kolkata, Chennai)</option>
+          <option value="non-metro">Non-metro</option>
+        </select>
+        <small id="cityHelp">Cap = 50% of salary for metro; 40% for non-metro.</small>
+      </div>
+
+      <div class="field">
+        <label for="regime">Tax Regime</label>
+        <select id="regime" name="regime" aria-describedby="regimeHelp">
+          <option value="old" selected>Old Regime (HRA allowed)</option>
+          <option value="new">New Regime (HRA not allowed)</option>
+        </select>
+        <small id="regimeHelp">HRA exemption is unavailable in the new regime; full HRA is taxable there.</small>
+      </div>
+
+      <div class="field">
+        <label for="pan">Annual Rent > ₹1,00,000?</label>
+        <div class="row">
+          <input id="pan" name="pan" type="checkbox" aria-describedby="panHelp">
+          <span class="muted">Landlord’s PAN required to claim via employer</span>
+        </div>
+        <small id="panHelp">If annual rent exceeds ₹1 lakh, PAN of the landlord must be provided to the employer.</small>
+      </div>
+
+      <div class="field">
+        <label for="month">Computation Basis</label>
+        <select id="month" name="month" aria-describedby="basisHelp">
+          <option value="annual" selected>Annualized (recommended)</option>
+          <option value="monthly">Monthly snapshot</option>
+        </select>
+        <small id="basisHelp">Rules are annual; monthly shows the same logic prorated.</small>
+      </div>
+    </div>
+
+    <div class="actions" role="group" aria-label="Calculation actions">
+      <button type="button" id="calcBtn">Calculate</button>
+      <button type="reset" class="secondary" id="resetBtn">Reset</button>
+    </div>
+  </form>
+
+  <div id="hraResults" class="results" aria-live="polite" aria-atomic="true" hidden>
+    <h3>Results <span id="basisTag" class="pill">Annual</span></h3>
+    <div class="kv" role="table" aria-label="Computation breakdown">
+      <div role="row"><div role="cell">Salary considered (Basic + DA)</div><div role="cell" id="salaryVal" class="emph">—</div></div>
+      <div role="row"><div role="cell">Actual HRA received</div><div role="cell" id="hraVal">—</div></div>
+      <div role="row"><div role="cell">Excess of rent over 10% of salary</div><div role="cell" id="rentDiffVal">—</div></div>
+      <div role="row"><div role="cell">City cap (50% metro / 40% non-metro)</div><div role="cell" id="capVal">—</div></div>
+      <div role="row"><div role="cell">Exempt HRA (least of above three)</div><div role="cell" id="exemptVal" class="emph">—</div></div>
+      <div role="row"><div role="cell">Taxable HRA (HRA received - exempt)</div><div role="cell" id="taxableVal">—</div></div>
+    </div>
+    <p id="regimeNote" class="note"></p>
+    <p id="panNote" class="warn" hidden>Annual rent exceeds ₹1,00,000. Landlord’s PAN should be furnished to the employer for HRA claim compliance.</p>
+    <p class="foot">Method: least of (Actual HRA, Excess rent over 10% of salary, Metro 50% / Non-metro 40% of salary). Salary = Basic + DA (as applicable). Exemption available only under the old regime.</p>
+  </div>
+
+  <script>
+    (function () {
+      const qs = (sel) => document.querySelector(sel);
+      const fmt = (n) => "₹ " + n.toLocaleString("en-IN", { maximumFractionDigits: 0 });
+
+      const $basic = qs("#basic");
+      const $da = qs("#da");
+      const $hra = qs("#hra");
+      const $rent = qs("#rent");
+      const $city = qs("#city");
+      const $regime = qs("#regime");
+      const $pan = qs("#pan");
+      const $basis = qs("#month");
+
+      const $btn = qs("#calcBtn");
+      const $reset = qs("#resetBtn");
+
+      const $box = qs("#hraResults");
+      const $basisTag = qs("#basisTag");
+      const $salaryVal = qs("#salaryVal");
+      const $hraVal = qs("#hraVal");
+      const $rentDiffVal = qs("#rentDiffVal");
+      const $capVal = qs("#capVal");
+      const $exemptVal = qs("#exemptVal");
+      const $taxableVal = qs("#taxableVal");
+      const $panNote = qs("#panNote");
+      const $regimeNote = qs("#regimeNote");
+
+      function valNum($el) {
+        const v = parseFloat(($el.value || "0").replace(/,/g, ""));
+        return isFinite(v) && v >= 0 ? v : 0;
+      }
+
+      function compute() {
+        // Inputs (monthly)
+        const basic = valNum($basic);
+        const da = valNum($da);
+        const hra = valNum($hra);
+        const rent = valNum($rent);
+        const metro = $city.value === "metro";
+        const regime = $regime.value; // 'old' | 'new'
+        const basisAnnual = $basis.value === "annual";
+
+        // Normalize to annual if selected
+        const factor = basisAnnual ? 12 : 1;
+        const salary = (basic + da) * factor; // Salary = Basic + DA (as applicable)
+        const hraAmt = hra * factor;
+        const rentPaid = rent * factor;
+
+        // Components for old regime
+        const rentDiff = Math.max(0, rentPaid - 0.10 * salary); // Excess of rent over 10% salary
+        const cap = (metro ? 0.50 : 0.40) * salary; // 50% metro / 40% non-metro
+        const least = Math.min(hraAmt, rentDiff, cap); // Least of three
+        const exempt = regime === "old" ? Math.max(0, least) : 0;
+        const taxable = Math.max(0, hraAmt - exempt);
+
+        // UI
+        $basisTag.textContent = basisAnnual ? "Annual" : "Monthly";
+        $salaryVal.textContent = fmt(Math.round(salary));
+        $hraVal.textContent = fmt(Math.round(hraAmt));
+        $rentDiffVal.textContent = fmt(Math.round(rentDiff));
+        $capVal.textContent = fmt(Math.round(cap));
+        $exemptVal.textContent = fmt(Math.round(exempt));
+        $taxableVal.textContent = fmt(Math.round(taxable));
+
+        // PAN note if rent > 1 lakh (annual basis)
+        const annualRent = rent * 12;
+        $panNote.hidden = !(annualRent > 100000);
+
+        // Regime note
+        if (regime === "new") {
+          $regimeNote.textContent = "Selected new tax regime: HRA exemption is not available, so full HRA becomes taxable.";
+        } else {
+          $regimeNote.textContent = "Selected old tax regime: HRA exemption computed per Section 10(13A) and the ‘least of three’ rule.";
+        }
+
+        $box.hidden = false;
+      }
+
+      function validate() {
+        const ok = valNum($basic) >= 0 && valNum($hra) >= 0 && valNum($rent) >= 0;
+        $btn.disabled = !ok;
+      }
+
+      ["input", "change"].forEach((ev) => {
+        document.getElementById("hraForm").addEventListener(ev, validate);
+      });
+
+      $btn.addEventListener("click", compute);
+      $reset.addEventListener("click", () => {
+        setTimeout(() => {
+          $box.hidden = true;
+          validate();
+        }, 0);
+      });
+
+      // Init
+      validate();
+    })();
+  </script>
+
+  <p class="foot">Disclaimer: For quick estimation and education only. Actual eligibility can depend on salary structure, DA applicability, proof and employer payroll policies; consult a tax professional for filing decisions.</p>
+</section>
